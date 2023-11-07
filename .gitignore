@@ -1,6 +1,8 @@
 imagenette2/
 imagenette2.tgz
 
+imagenette2-160/
+imagenette2-160.tgz
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
