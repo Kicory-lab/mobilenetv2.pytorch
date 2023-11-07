@@ -5,6 +5,7 @@ imagenette2-160/
 imagenette2-160.tgz
 
 checkpoints/
+checkpoints_original/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
