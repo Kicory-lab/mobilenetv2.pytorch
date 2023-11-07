@@ -4,6 +4,8 @@ imagenette2.tgz
 imagenette2-160/
 imagenette2-160.tgz
 
+checkpoints/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
