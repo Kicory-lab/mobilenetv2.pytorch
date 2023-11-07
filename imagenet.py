@@ -368,6 +368,10 @@ def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoin
     torch.save(state, filepath)
     if is_best:
         shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
+        
+        # Save the best model state to run test later.
+        stateFilePath = os.path.join(checkpoint, 'model_best_state.pth')
+        torch.save(state['state_dict'], stateFilePath)
 
 
 from math import cos, pi
