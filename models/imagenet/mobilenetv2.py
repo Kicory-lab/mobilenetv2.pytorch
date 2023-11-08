@@ -47,7 +47,7 @@ def conv_1x1_bn(inp, oup):
         nn.ReLU6(inplace=True)
     )
 
-
+# MobileNetV2의 핵심 모듈
 class InvertedResidual(nn.Module):
     def __init__(self, inp, oup, stride, expand_ratio):
         super(InvertedResidual, self).__init__()
@@ -59,11 +59,17 @@ class InvertedResidual(nn.Module):
         if expand_ratio == 1:
             self.conv = nn.Sequential(
                 # dw
-                nn.Conv2d(hidden_dim, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
+                nn.Conv2d(inp, hidden_dim, 3, stride, 1, groups=hidden_dim, bias=False),
                 nn.BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
                 # pw-linear
-                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.Conv2d(
+                    in_channels=hidden_dim,
+                    out_channels=oup,
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                    bias=False),
                 nn.BatchNorm2d(oup),
             )
         else:
@@ -77,7 +83,13 @@ class InvertedResidual(nn.Module):
                 nn.BatchNorm2d(hidden_dim),
                 nn.ReLU6(inplace=True),
                 # pw-linear
-                nn.Conv2d(hidden_dim, oup, 1, 1, 0, bias=False),
+                nn.Conv2d(
+                    in_channels=hidden_dim,
+                    out_channels=oup,
+                    kernel_size=1,
+                    stride=1,
+                    padding=0,
+                    bias=False),
                 nn.BatchNorm2d(oup),
             )
 
@@ -104,30 +116,40 @@ class MobileNetV2(nn.Module):
         ]
 
         # building first layer
-        input_channel = _make_divisible(32 * width_mult, 4 if width_mult == 0.1 else 8)
-        layers = [conv_3x3_bn(3, input_channel, 2)]
+        input_channel = _make_divisible(32 * width_mult, 8)
+        layers = [conv_3x3_bn(inp=3, oup=input_channel, stride=2)]
+        
         # building inverted residual blocks
         block = InvertedResidual
         for t, c, n, s in self.cfgs:
-            output_channel = _make_divisible(c * width_mult, 4 if width_mult == 0.1 else 8)
+            output_channel = _make_divisible(c * width_mult, 8)
             for i in range(n):
                 layers.append(block(input_channel, output_channel, s if i == 0 else 1, t))
                 input_channel = output_channel
         self.features = nn.Sequential(*layers)
+
         # building last several layers
-        output_channel = _make_divisible(1280 * width_mult, 4 if width_mult == 0.1 else 8) if width_mult > 1.0 else 1280
-        self.conv = conv_1x1_bn(input_channel, output_channel)
+        output_channel = _make_divisible(1280 * width_mult, 1280)
+        self.conv = conv_1x1_bn(inp=input_channel, out=output_channel)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
+
+        # building the last linear classifier
         self.classifier = nn.Linear(output_channel, num_classes)
 
         self._initialize_weights()
 
     def forward(self, x):
+        # first layer + 반복되는 InvertedResidual blocks
         x = self.features(x)
+
+        # Last several layers
         x = self.conv(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
+
+        # The last classifier
         x = self.classifier(x)
+        
         return x
 
     def _initialize_weights(self):
