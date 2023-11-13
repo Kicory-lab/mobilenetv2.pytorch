@@ -130,7 +130,7 @@ class MobileNetV2(nn.Module):
 
         # building last several layers
         output_channel = _make_divisible(1280 * width_mult, 1280)
-        self.conv = conv_1x1_bn(inp=input_channel, out=output_channel)
+        self.conv = conv_1x1_bn(inp=input_channel, oup=output_channel)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
         # building the last linear classifier
